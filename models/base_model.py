@@ -5,6 +5,7 @@
 import uuid
 from datetime import datetime
 import re
+import models
 
 
 class BaseModel:
@@ -14,7 +15,7 @@ class BaseModel:
     Attributes
     ----------
     id : str (instance attribute)
-        The unique identifier of a created user
+        The unique identifier of a created object
     created_at : datetime.datetime (instance attribute)
         The date and time a new user is created.
     updated_at : datetime.datetime (instance attribute)
@@ -24,7 +25,8 @@ class BaseModel:
     -------
     save()
          Update the public instance attribute updated_at with the
-         current datetime
+         current datetime (i.e the current datetime object is saved)
+         and save the object (user data) in a file
     to_dict()
         Return a dictionary containing all keys/values of __dict__
         of the instance
@@ -37,6 +39,7 @@ class BaseModel:
         ----------
         *args : any type (optional, non-keyworded arguments)
         **kwargs : any type (optional, keyworded arguments)
+            dictionary of an existing or already created object/instance
         """
         self.id = str(uuid.uuid4())
         self.created_at = datetime.now()
@@ -44,7 +47,9 @@ class BaseModel:
         if kwargs and len(kwargs) > 0:
             for key, value in kwargs.items():
                 time_fmt = '%Y-%m-%d %H:%M:%S.%f'
-                if key == "created_at":
+                if key == "id":
+                    self.id = value
+                elif key == "created_at":
                     # replace the 'T' in str type  datetime with ' '
                     value_fmt = re.sub('T', ' ', value)
                     # convert the str type datetime to datetime object
@@ -54,13 +59,17 @@ class BaseModel:
                     value_fmt = re.sub('T', ' ', value)
                     # convert the str type datetime to datetime object
                     self.updated_at = datetime.strptime(value_fmt, time_fmt)
+        else:
+            models.storage.new(self)
 
     def save(self):
         """
-        Update the public instance attribute updated_at
-        with the current datetime
+        Update the public instance attribute updated_at with the current
+        datetime (i.e the current datetime object is saved)and save the
+        object (user data) in a file
         """
         self.updated_at = datetime.now()
+        models.storage.save()
 
     def to_dict(self):
         """
