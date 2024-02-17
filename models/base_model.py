@@ -50,21 +50,26 @@ class BaseModel:
                 if key == "id":
                     self.id = value
                 elif key == "created_at":
-                    # replace the 'T' in str type  datetime with ' '
+                    # Replace the 'T' in str type  datetime with ' '
                     value_fmt = re.sub('T', ' ', value)
-                    # convert the str type datetime to datetime object
+                    # Convert the str type datetime to datetime object
                     self.created_at = datetime.strptime(value_fmt, time_fmt)
                 elif key == "updated_at":
-                    # replace the 'T' in str type  datetime with ' '
+                    # Replace the 'T' in str type  datetime with ' '
                     value_fmt = re.sub('T', ' ', value)
-                    # convert the str type datetime to datetime object
+                    # Convert the str type datetime to datetime object
                     self.updated_at = datetime.strptime(value_fmt, time_fmt)
+                else:
+                    if key != "__class__":
+                        # If key in kwargs is not the instance attribute except
+                        # '__class__', create instance attribute with key/value
+                        setattr(self, key, value)
         else:
             models.storage.new(self)
 
     def save(self):
         """
-        Update the public instance attribute updated_at with the current
+        Update the public instance attribute 'updated_at' with the current
         datetime (i.e the current datetime object is saved)and save the
         object (user data) in a file
         """
