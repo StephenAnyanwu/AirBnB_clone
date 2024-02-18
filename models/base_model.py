@@ -5,7 +5,7 @@
 import uuid
 from datetime import datetime
 import re
-import models
+from models import storage
 
 
 class BaseModel:
@@ -65,7 +65,7 @@ class BaseModel:
                         # '__class__', create instance attribute with key/value
                         setattr(self, key, value)
         else:
-            models.storage.new(self)
+            storage.new(self)
 
     def save(self):
         """
@@ -74,7 +74,7 @@ class BaseModel:
         object (user data) in a file
         """
         self.updated_at = datetime.now()
-        models.storage.save()
+        storage.save()
 
     def to_dict(self):
         """

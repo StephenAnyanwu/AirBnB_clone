@@ -20,7 +20,7 @@ class FileStorage:
     Methods
     -------
     __classes()
-        Import classes from models.base_model module and return a
+        Import classes from modules in models package and return a
         dictionary of classes
     all()
         Return the dictionary '__objects'
@@ -41,6 +41,12 @@ class FileStorage:
     def __classes(self):
         """Import classes from modules in models package and
         return a dictionary of classes
+
+        Returns
+        -------
+        dict
+            A dictionary of classes (as keys) defined in each modules
+            in models package
         """
         # Importing in this method is done to avoid
         # circular imports error
@@ -82,11 +88,11 @@ class FileStorage:
         for key, obj_name in self.__objects.items():
             new_objs[key] = obj_name.to_dict()
         try:
-            #  if file exist, load its content to a variable
+            #  If file exist, load its content to a variable
             with open(self.__file_path, 'r') as jf:
                 json_to_py = json.load(jf)
             if type(json_to_py) is dict:
-                #  modify the loaded file content with new objects
+                #  Modify the loaded file content with new objects
                 for key, obj_dict in new_objs.items():
                     if key not in json_to_py:
                         json_to_py[key] = obj_dict
@@ -94,7 +100,7 @@ class FileStorage:
         except Exception as e:
             pass
         finally:
-            #  modify the file with new objects (data)
+            #  Modify the file with new objects (data)
             with open(self.__file_path, 'w') as jf:
                 json.dump(new_objs, jf)
 
