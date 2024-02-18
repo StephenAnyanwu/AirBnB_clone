@@ -264,10 +264,28 @@ class HBNBCommand(cmd.Cmd):
         Run command passed if command is recognized else, print
         default error message and return.
         """
-        if arg == "User.all()":
-            self.do_all(line="User")
+        commands = ["BaseModel.all()",
+                    "User.all()",
+                    "State.all()",
+                    "City.all()",
+                    "Amenity.all()",
+                    "Place.all()",
+                    "Review.all()"]
+        if arg in commands:
+            class_, method = arg.split(".")
+            listed_objs = []
+            for obj_id, obj in models.storage.all().items():
+                if class_ == obj_id.split(".")[0]:
+                    listed_objs.append(str(obj))
+            print("[", end="")
+            for i in range(len(listed_objs)):
+                print(listed_objs[i], end="")
+                if i != len(listed_objs) - 1:
+                    print(", ", end="")
+            print(']', end="")
+            print()
             return
-        return super().default(line)
+        return super().default(arg)
 
 
 if __name__ == "__main__":
