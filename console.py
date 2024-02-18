@@ -17,6 +17,7 @@ import re
 
 class HBNBCommand(cmd.Cmd):
     """Impliment a command line interpreter"""
+    intro = "Welcome to HBNB, type 'help' for commands."
     prompt = "(hbnb) "
     CLASSES = {"BaseModel": BaseModel,
                "User": User,
@@ -25,13 +26,20 @@ class HBNBCommand(cmd.Cmd):
                "Amenity": Amenity,
                "Place": Place,
                "Review": Review}
+    CLASS_NAMES = [name for name in CLASSES]
 
     def do_quit(self, line):
-        """Quit command to exit the program"""
+        """
+        Quit command to exit the program
+        Usage: quit
+        """
         return True
 
     def do_EOF(self, line):
-        """EOF command (Ctrl-D) to exit the program"""
+        """
+        EOF command to exit the program
+        Usage: Ctrl+d
+        """
         return True
 
     def emptyline(self):
@@ -39,8 +47,11 @@ class HBNBCommand(cmd.Cmd):
         pass
 
     def do_create(self, line):
-        """Create a new instance of a class, saves
-        it (to the JSON file) and prints the id"""
+        """
+        Create a new instance of a class, saves it (to the JSON file)
+        and prints the id
+        Usage: create <class name>
+        """
         # Note: 'line' are the command line arguments
         # in our case a class name.
         if line == "":
@@ -54,9 +65,20 @@ class HBNBCommand(cmd.Cmd):
             new_obj.save()
             print(new_obj.id)
 
+    def complete_create(self, text, line, begidx, endidx):
+        """
+        Automatically complete the class name for create command
+        """
+        if not text:
+            return self.CLASS_NAMES
+        return [s for s in self.CLASS_NAMES if s.startswith(text)]
+
     def do_show(self, line):
-        """Prints the string representation of an instance
-        base on class name and id"""
+        """
+        Prints the string representation of an instance
+        base on class name and id
+        Usage: show <class name> <id>
+        """
         args = line.split()
         if not args:
             # If no class name is passed
@@ -80,8 +102,19 @@ class HBNBCommand(cmd.Cmd):
             # If class name and id passed exist
             print(obj_str)
 
+    def complete_show(self, text, line, begidx, endidx):
+        """
+        Automatically complete the class name for show command
+        """
+        if not text:
+            return self.CLASS_NAMES
+        return [s for s in self.CLASS_NAMES if s.startswith(text)]
+
     def do_destroy(self, line):
-        """Delete an instance base on class name and id"""
+        """
+        Delete an instance base on class name and id
+        Usage: destroy <class name> <id>
+        """
         args = line.split()
         if len(args) == 0:
             # If no class name is passed
@@ -103,9 +136,20 @@ class HBNBCommand(cmd.Cmd):
                 return
             models.storage.delete(args_concat)
 
+    def complete_destoy(self, text, line, begidx, endidx):
+        """
+        Automatically complete the class name for destroy command
+        """
+        if not text:
+            return self.CLASS_NAMES
+        return [s for s in self.CLASS_NAMES if s.startswith(text)]
+
     def do_all(self, line):
-        """Print all string representation of all instances based or
-        not on the class name in a list format"""
+        """
+        Print all string representation of all instances based or
+        not on the class name in a list format
+        Usage: all or all <class name>
+        """
         if not line:
             # If no class name is passed, print all objects
             listed_objs = [str(obj) for obj in models.storage.all().values()]
@@ -122,10 +166,18 @@ class HBNBCommand(cmd.Cmd):
         else:
             print("** class doesn't exist **")
 
+    def complete_all(self, text, line, begidx, endidx):
+        """
+        Automatically complete the class name for all command
+        """
+        if not text:
+            return self.CLASS_NAMES
+        return [s for s in self.CLASS_NAMES if s.startswith(text)]
+
     def do_update(self, line):
         """
         Update an instance based on class name and id by adding or updating
-        attribute (save the change into the JSON file.
+        attribute save the change (into the JSON file).
         Usage: update <class name> <id> <attribute name> '<attribute value>'
         Rules to follow:
             >> Only “simple” arguments can be updated: string, integer
@@ -198,6 +250,24 @@ class HBNBCommand(cmd.Cmd):
                     new_obj = self.CLASSES[args[0]](**obj_dict)
                     models.storage.new(new_obj)
                     new_obj.save()
+
+    def complete_update(self, text, line, begidx, endidx):
+        """
+        Automatically complete the class name for update command
+        """
+        if not text:
+            return self.CLASS_NAMES
+        return [s for s in self.CLASS_NAMES if s.startswith(text)]
+
+    def default(self, arg):
+        """
+        Run command passed if command is recognized else, print
+        default error message and return.
+        """
+        if arg == "User.all()":
+            self.do_all(line=None)
+            return
+        return super().default(line)
 
 
 if __name__ == "__main__":
