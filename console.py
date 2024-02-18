@@ -265,7 +265,7 @@ class HBNBCommand(cmd.Cmd):
         default error message and return.
         """
         if arg == "User.all()":
-            self.do_all(line=None)
+            self.do_all(line="User")
             return
         return super().default(line)
 
