@@ -70,8 +70,8 @@ class HBNBCommand(cmd.Cmd):
         Automatically complete the class name for create command
         """
         if not text:
-            return self.CLASS_NAMES
-        return [s for s in self.CLASS_NAMES if s.startswith(text)]
+            return [c for c in self.CLASSES]
+        return [c for c in self.CLASSES if c.startswith(text)]
 
     def do_show(self, line):
         """
@@ -107,8 +107,8 @@ class HBNBCommand(cmd.Cmd):
         Automatically complete the class name for show command
         """
         if not text:
-            return self.CLASS_NAMES
-        return [s for s in self.CLASS_NAMES if s.startswith(text)]
+            return [c for c in self.CLASSES]
+        return [c for c in self.CLASSES if c.startswith(text)]
 
     def do_destroy(self, line):
         """
@@ -141,8 +141,8 @@ class HBNBCommand(cmd.Cmd):
         Automatically complete the class name for destroy command
         """
         if not text:
-            return self.CLASS_NAMES
-        return [s for s in self.CLASS_NAMES if s.startswith(text)]
+            return [c for c in self.CLASSES]
+        return [c for c in self.CLASSES if c.startswith(text)]
 
     def do_all(self, line):
         """
@@ -171,8 +171,8 @@ class HBNBCommand(cmd.Cmd):
         Automatically complete the class name for all command
         """
         if not text:
-            return self.CLASS_NAMES
-        return [s for s in self.CLASS_NAMES if s.startswith(text)]
+            return [c for c in self.CLASSES]
+        return [c for c in self.CLASSES if c.startswith(text)]
 
     def do_update(self, line):
         """
@@ -219,10 +219,9 @@ class HBNBCommand(cmd.Cmd):
             return
         else:
             in_quote = False
-            # Convert the last arguments starting from the fourth to space
-            # seperated strings
-            last_args_concat = " ".join(args[3:])
+            # Join from the 4th argument to the end of 'line'
             # Find strings between double quotes and store then in a list
+            last_args_concat = " ".join(args[3:])
             str_list = re.findall(r'\"([^\"]*)\"', last_args_concat)
             if len(str_list) > 0:
                 # If there are strings between double quotes in str_list
@@ -256,8 +255,27 @@ class HBNBCommand(cmd.Cmd):
         Automatically complete the class name for update command
         """
         if not text:
-            return self.CLASS_NAMES
-        return [s for s in self.CLASS_NAMES if s.startswith(text)]
+            return [c for c in self.CLASSES]
+        return [c for c in self.CLASSES if c.startswith(text)]
+
+    def class_command_split(self, command):
+        """
+        Split command and arguments
+    
+        Paramaters
+        ----------
+        command : str
+            Command to split
+        Returns
+        -------
+        str
+            Class name and other arguments in command line
+            argument format.
+        """
+        class_ = command.split(".")[0]            
+        args = command.split("(")[1].split(")")[0]
+        class_and_args = class_ + " " + args
+        return class_and_args
 
     def default(self, arg):
         """
@@ -270,22 +288,75 @@ class HBNBCommand(cmd.Cmd):
                     "City.all()",
                     "Amenity.all()",
                     "Place.all()",
-                    "Review.all()"]
+                    "Review.all()",
+                    "BaseModel.count()",
+                    "User.count()",
+                    "State.count()",
+                    "City.count()",
+                    "Amenity.count()",
+                    "Place.count()",
+                    "Review.count()"]
         if arg in commands:
             class_, method = arg.split(".")
             listed_objs = []
             for obj_id, obj in models.storage.all().items():
                 if class_ == obj_id.split(".")[0]:
                     listed_objs.append(str(obj))
-            print("[", end="")
-            for i in range(len(listed_objs)):
-                print(listed_objs[i], end="")
-                if i != len(listed_objs) - 1:
-                    print(", ", end="")
-            print(']', end="")
-            print()
+            if method == "all()":
+                # Retrieve all instances of a class and print in
+                # a list format.
+                # Usage: <class name>.all()
+                print("[", end="")
+                for i in range(len(listed_objs)):
+                    print(listed_objs[i], end="")
+                    if i != len(listed_objs) - 1:
+                        print(", ", end="")
+                print(']')
+                return
+            elif method == "count()":
+                # Retrieve the number of instances of a class.
+                # Usage: <class name>.count()
+                print(len(listed_objs))
+                return
+        if re.match(r".+\.show\(.+\)", arg):
+            # Rretrieve an instance based on its ID.
+            # Usage: <class name>.show(<id>)
+            class_id_concat = self.class_command_split(arg)
+            self.do_show(class_id_concat)
             return
-        return super().default(arg)
+        if re.match(r".+\.destroy\(.+\)", arg):
+            # Destroy an instance based on his ID
+            # Usage: <class name>.destroy(<id>)
+            class_id_concat = self.class_command_split(arg)
+            self.do_destroy(class_id_concat)
+            return
+        if re.match(r".+\.update\(.+\{.+\}\)", arg):
+            # Update an instance based on his ID with a dictionary
+            # Usage: <class name>.update(<id> <dictionary representation>)
+            class_name = arg.split(".")[0].split("(")[0]
+            id_ = arg.split("(")[1].split(" ")[0]
+            in_curly_braces = re.findall(r"\{.*\}", arg)[0]
+            dict_ = False
+            try:
+                dict_ = eval(in_curly_braces)
+            except Exception as e:
+                super().default(arg)
+                return
+            if dict_:
+                for attr_name, attr_value in dict_.items():
+                    if type(attr_value) == str:
+                        class_and_args = f'{class_name} {id_} {attr_name} "{attr_value}"'
+                    else:
+                        class_and_args = f'{class_name} {id_} {attr_name} {attr_value}'
+                    self.do_update(class_and_args)
+            return
+        if re.match(r".+\.update\(.+\)", arg):
+            # Update an instance based on his ID.
+            # Usage: <class name>.update(<id> <attribute name> <attribute value>)
+            class_and_args = self.class_command_split(arg)
+            self.do_update(class_and_args)
+            return
+        super().default(arg)
 
 
 if __name__ == "__main__":
