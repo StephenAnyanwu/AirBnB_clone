@@ -48,7 +48,7 @@ class BaseModel:
             for key, value in kwargs.items():
                 time_fmt = '%Y-%m-%d %H:%M:%S.%f'
                 if key == "id":
-                    self.id = value
+                    self.id = str(value)
                 elif key == "created_at":
                     # Replace the 'T' in str type  datetime with ' '
                     value_fmt = re.sub('T', ' ', value)
