@@ -258,24 +258,36 @@ class HBNBCommand(cmd.Cmd):
             return [c for c in self.CLASSES]
         return [c for c in self.CLASSES if c.startswith(text)]
 
-    def class_command_split(self, command):
+    def run_command(self, command, method):
         """
-        Split command and arguments
-    
+        Run a command if it is valid
+
         Paramaters
         ----------
         command : str
-            Command to split
-        Returns
-        -------
-        str
-            Class name and other arguments in command line
-            argument format.
+            Command to run
+        method : str
+            Part of the 'command'
         """
-        class_ = command.split(".")[0]            
-        args = command.split("(")[1].split(")")[0]
-        class_and_args = class_ + " " + args
-        return class_and_args
+        class_name = command.split(".")[0]
+        id_ = command.split("(")[1].split(")")[0]
+        error = False
+        if '"' in id_ and (id_[0] != '"' or id_[-1] != '"'):
+            error = True
+        if error is False:
+            id_ = re.sub('\"', '', id_)
+        if method == "show":
+            self.do_show(f'{class_name} {id_}')
+        if method == "destroy":
+            self.do_destroy(f'{class_name} {id_}')
+
+    def arg_process(self, arg, list_, idx):
+        """Process argument"""
+        if re.match(r'^.*\,$', list_[idx]):
+            list_[idx] = re.sub(r'\,', '', list_[idx])
+        else:
+            super().default(arg)
+            return
 
     def default(self, arg):
         """
@@ -318,23 +330,30 @@ class HBNBCommand(cmd.Cmd):
                 # Usage: <class name>.count()
                 print(len(listed_objs))
                 return
-        if re.match(r".+\.show\(.+\)", arg):
+        if re.match(r".+\.show\(.*\)", arg):
             # Rretrieve an instance based on its ID.
             # Usage: <class name>.show(<id>)
-            class_id_concat = self.class_command_split(arg)
-            self.do_show(class_id_concat)
+            self.run_command(arg, "show")
             return
-        if re.match(r".+\.destroy\(.+\)", arg):
+        if re.match(r".+\.destroy\(.*\)", arg):
             # Destroy an instance based on his ID
             # Usage: <class name>.destroy(<id>)
-            class_id_concat = self.class_command_split(arg)
-            self.do_destroy(class_id_concat)
+            self.run_command(arg, "destroy")
             return
-        if re.match(r".+\.update\(.+\{.+\}\)", arg):
+        if re.match(r".+\.update\(.*\{.*\}\)", arg):
             # Update an instance based on his ID with a dictionary
             # Usage: <class name>.update(<id> <dictionary representation>)
             class_name = arg.split(".")[0].split("(")[0]
             id_ = arg.split("(")[1].split(" ")[0]
+            if re.match(r'^.*\,$', id_):
+                id_ = re.sub(',', '', id_)
+            else:
+                super().default(arg)
+                return
+            if '"' in id_ and (id_[0] != '"' or id_[-1] != '"'):
+                self.do_update(f'{class_name} {id_}')
+                return
+            id_ = re.sub(r'\"', '', id_)
             in_curly_braces = re.findall(r"\{.*\}", arg)[0]
             dict_ = False
             try:
@@ -342,19 +361,37 @@ class HBNBCommand(cmd.Cmd):
             except Exception as e:
                 super().default(arg)
                 return
-            if dict_:
-                for attr_name, attr_value in dict_.items():
-                    if type(attr_value) == str:
-                        class_and_args = f'{class_name} {id_} {attr_name} "{attr_value}"'
-                    else:
-                        class_and_args = f'{class_name} {id_} {attr_name} {attr_value}'
-                    self.do_update(class_and_args)
+            if dict_ and len(dict_) == 0:
+                class_and_id = class_name + "." + id_
+                self.do_update(class_and_id)
+                return
+            for attr_name, attr_val in dict_.items():
+                if type(attr_val) == str:
+                    class_args = f'{class_name} {id_} {attr_name} "{attr_val}"'
+                else:
+                    class_args = f'{class_name} {id_} {attr_name} {attr_val}'
+                self.do_update(class_args)
             return
-        if re.match(r".+\.update\(.+\)", arg):
+        if re.match(r".+\.update\(.*\)", arg):
             # Update an instance based on his ID.
-            # Usage: <class name>.update(<id> <attribute name> <attribute value>)
-            class_and_args = self.class_command_split(arg)
-            self.do_update(class_and_args)
+            # Usage: <class name>.update(<id> <attr name> <attr value>)
+            # <id> and <attribute name> but be in quotes
+            class_ = arg.split(".")[0]
+            args = arg.split("(")[1].split(")")[0]
+            class_args = class_ + " " + args
+            class_args_list = class_args.split()
+            if len(class_args_list) >= 2:
+                if len(class_args_list) > 2:
+                    self.arg_process(arg, class_args_list, 1)
+                if re.match(r'^\".*\"$', class_args_list[1]):
+                    class_args_list[1] = re.sub(r'\"', '', class_args_list[1])
+            if len(class_args_list) >= 3:
+                if len(class_args_list) > 3:
+                    self.arg_process(arg, class_args_list, 2)
+                if re.match(r'^\".*\"$', class_args_list[2]):
+                    class_args_list[2] = re.sub(r'\"', '', class_args_list[2])
+            class_args = " ".join(class_args_list)
+            self.do_update(class_args)
             return
         super().default(arg)
 
